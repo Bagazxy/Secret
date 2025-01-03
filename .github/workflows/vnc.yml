@@ -1,4 +1,4 @@
-name: Setup Linux with XFCE4 and VNC via LocalTunnel
+name: Setup Windows with Chrome Remote Desktop
 
 on:
   push:
@@ -6,37 +6,31 @@ on:
       - main
 
 jobs:
-  setup-linux-vnc:
-    runs-on: ubuntu-latest
+  setup-windows-crd:
+    runs-on: windows-latest
 
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      # Step 2: Install XFCE4 and VNC server
-      - name: Install XFCE4 and VNC Server
+      # Step 1: Download Chrome Remote Desktop
+      - name: Download Chrome Remote Desktop Installer
         run: |
-          sudo apt update
-          sudo apt install -y xfce4 xfce4-goodies tightvncserver wget npm
-          mkdir -p ~/.vnc
-          echo -e "yourpassword\nyourpassword\nn" | vncpasswd
-          echo 'startxfce4' > ~/.vnc/xstartup
-          chmod +x ~/.vnc/xstartup
-          vncserver -geometry 1920x1080 :1
+          curl -L -o crd_installer.exe https://dl.google.com/chrome-remote-desktop/chrome-remote-desktop_current.exe
 
-      # Step 3: Install LocalTunnel and expose VNC
-      - name: Install LocalTunnel
+      # Step 2: Install Chrome Remote Desktop
+      - name: Install Chrome Remote Desktop
         run: |
-          sudo npm install -g localtunnel
-          nohup lt --port 5901 > localtunnel.log 2>&1 &
+          start /wait crd_installer.exe /silent /install
 
-      # Step 4: Display LocalTunnel URL
-      - name: Get LocalTunnel URL
+      # Step 3: Display Setup Instructions
+      - name: Display Chrome Remote Desktop Setup Instructions
         run: |
-          sleep 5
-          cat localtunnel.log | grep -o "https://[^ ]*"
+          echo "1. Open the Actions tab and find this workflow."
+          echo "2. Download and install the Chrome browser (if not already installed)."
+          echo "3. Go to https://remotedesktop.google.com/headless and sign in with your Google account."
+          echo "4. Set up a remote access code for this device."
+          echo "5. Follow the instructions to link this machine to your Google account."
+          echo "6. Use the Chrome Remote Desktop app on your mobile device or another computer to connect."
+          echo "Keep this workflow alive using the sleep step below."
 
-      # Step 5: Keep workflow alive for 10 hours
-      - name: Keep Alive for 10 Hours
-        run: sleep 36000
+      # Step 4: Keep workflow active for 10 hours
+      - name: Keep Workflow Active for 10 Hours
+        run: timeout /t 36000
