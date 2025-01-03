@@ -1,4 +1,4 @@
-name: Setup Pterodactyl Panel with LocalTunnel
+name: Setup Chrome Remote Desktop on Ubuntu
 
 on:
   push:
@@ -6,59 +6,44 @@ on:
       - main
 
 jobs:
-  setup-pterodactyl:
+  setup-chrome-remote-desktop:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Install Dependencies
+      # Step 1: Install dependencies for Chrome Remote Desktop
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y curl wget sudo lsb-release apt-transport-https software-properties-common
+          sudo apt install -y wget curl gnupg2 lsb-release
+          sudo apt install -y xorg openbox xrdp
 
-      # Step 2: Install Docker
-      - name: Install Docker
+      # Step 2: Install Chrome Remote Desktop
+      - name: Install Chrome Remote Desktop
         run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sudo sh get-docker.sh
-          sudo usermod -aG docker $USER
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+          curl -sSL https://dl.google.com/linux/direct/google-chrome-remote-desktop_current_amd64.deb -o crd_installer.deb
+          sudo apt install -y ./crd_installer.deb
 
-      # Step 3: Install Pterodactyl Panel Dependencies
-      - name: Install Pterodactyl Panel Dependencies
+      # Step 3: Setup Chrome Remote Desktop
+      - name: Setup Chrome Remote Desktop
         run: |
-          sudo apt install -y python3 python3-pip python3-dev libffi-dev libssl-dev git unzip
+          sudo systemctl start xrdp
+          sudo systemctl enable xrdp
+          sudo usermod -aG chrome-remote-desktop $USER
+          sudo mkdir /etc/opt/chrome-remote-desktop-session
+          echo "exec /usr/bin/openbox-session" | sudo tee /etc/opt/chrome-remote-desktop-session/startup
 
-      # Step 4: Download and Install Pterodactyl Panel
-      - name: Download and Install Pterodactyl Panel
+      # Step 4: Display instructions to configure CRD
+      - name: Display Setup Instructions
         run: |
-          sudo curl -Lo /tmp/panel.tar.gz https://github.com/pterodactyl/panel/releases/download/v1.0.0/panel.tar.gz
-          cd /var/www
-          sudo tar -xzvf /tmp/panel.tar.gz
-          sudo chown -R www-data:www-data pterodactyl
-          cd /var/www/pterodactyl
-          sudo php composer.phar install --no-dev --optimize-autoloader
+          echo "To complete setup, follow these steps:"
+          echo "1. Open the Actions tab in GitHub and find this workflow."
+          echo "2. Follow the instructions on https://remotedesktop.google.com/headless."
+          echo "3. Set up remote access and get the code."
+          echo "4. Access the machine using Chrome Remote Desktop via your browser or app."
+          echo "Make sure to connect using the headless setup and use the generated code."
 
-      # Step 5: Set Up Pterodactyl Panel Configuration
-      - name: Set Up Pterodactyl Panel Configuration
-        run: |
-          sudo cp .env.example .env
-          sudo php artisan key:generate
-          sudo php artisan p:environment:setup
-          sudo php artisan p:environment:database
-          sudo php artisan migrate --seed --force
-
-      # Step 6: Install LocalTunnel
-      - name: Install LocalTunnel
-        run: |
-          sudo npm install -g localtunnel
-          nohup lt --port 80 > localtunnel.log 2>&1 &
-
-      # Step 7: Display LocalTunnel URL
-      - name: Display LocalTunnel URL
-        run: |
-          sleep 5
-          cat localtunnel.log | grep -o "https://[^ ]*"
-
-      # Step 8: Keep Workflow Active for 10 Hours
+      # Step 5: Keep workflow alive for 10 hours
       - name: Keep Workflow Active for 10 Hours
         run: sleep 36000
