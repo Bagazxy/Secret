@@ -1,4 +1,4 @@
-name: Setup Linux with XFCE4 and VNC via Pinggy
+name: Setup Linux with XFCE4 and VNC via LocalTunnel
 
 on:
   push:
@@ -18,24 +18,24 @@ jobs:
       - name: Install XFCE4 and VNC Server
         run: |
           sudo apt update
-          sudo apt install -y xfce4 xfce4-goodies tightvncserver wget
+          sudo apt install -y xfce4 xfce4-goodies tightvncserver wget npm
           mkdir -p ~/.vnc
           echo -e "yourpassword\nyourpassword\nn" | vncpasswd
           echo 'startxfce4' > ~/.vnc/xstartup
           chmod +x ~/.vnc/xstartup
           vncserver -geometry 1920x1080 :1
 
-      # Step 3: Download and setup Pinggy
-      - name: Setup Pinggy Tunnel
+      # Step 3: Install LocalTunnel and expose VNC
+      - name: Install LocalTunnel
         run: |
-          curl -sL https://get.pinggy.io | bash
-          nohup pinggy tcp 5901 > pinggy.log 2>&1 &
+          sudo npm install -g localtunnel
+          nohup lt --port 5901 > localtunnel.log 2>&1 &
 
-      # Step 4: Display Pinggy URL
-      - name: Get Pinggy TCP URL
+      # Step 4: Display LocalTunnel URL
+      - name: Get LocalTunnel URL
         run: |
           sleep 5
-          cat pinggy.log | grep -o "tcp://[^ ]*"
+          cat localtunnel.log | grep -o "https://[^ ]*"
 
       # Step 5: Keep workflow alive for 10 hours
       - name: Keep Alive for 10 Hours
