@@ -1,4 +1,4 @@
-name: Setup Chrome Remote Desktop on Ubuntu
+name: Setup Chrome Remote Desktop
 
 on:
   push:
@@ -10,44 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Install dependencies for Chrome Remote Desktop
-      - name: Install Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y wget curl gnupg2 lsb-release apt-transport-https software-properties-common
-          sudo apt install -y xorg openbox xrdp
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      # Step 2: Install Google Chrome
-      - name: Install Google Chrome
+      - name: Update package list
+        run: sudo apt-get update
+
+      - name: Install Chrome
         run: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+          sudo apt install ./google-chrome-stable_current_amd64.deb -y
+          rm google-chrome-stable_current_amd64.deb
 
-      # Step 3: Install Chrome Remote Desktop
       - name: Install Chrome Remote Desktop
         run: |
-          wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
-          sudo apt install -y ./chrome-remote-desktop_current_amd64.deb
+          sudo apt-get install chrome-remote-desktop -y
+          # Add your user to the chrome-remote-desktop group
+          sudo usermod -a -G chrome-remote-desktop $USER
 
-      # Step 4: Setup Chrome Remote Desktop
-      - name: Setup Chrome Remote Desktop
+      - name: Set up Chrome Remote Desktop
         run: |
-          sudo systemctl start xrdp
-          sudo systemctl enable xrdp
-          sudo usermod -aG chrome-remote-desktop $USER
-          sudo mkdir /etc/opt/chrome-remote-desktop-session
-          echo "exec /usr/bin/openbox-session" | sudo tee /etc/opt/chrome-remote-desktop-session/startup
+          # Replace 'your-email@gmail.com' with your Google account email
+          echo "export CHROME_REMOTE_DESKTOP_DEFAULT_DESKTOP_SESSION=xfce" >> ~/.bashrc
+          echo "export DISPLAY=:1" >> ~/.bashrc
+          echo "bzakyan@gmail.com" > ~/.chrome-remote-desktop-session
+          # Start the desktop environment
+          startxfce4 &
+          # Start Chrome Remote Desktop
+          chrome-remote-desktop --start
 
-      # Step 5: Display Setup Instructions
-      - name: Display Setup Instructions
-        run: |
-          echo "To complete setup, follow these steps:"
-          echo "1. Open the Actions tab in GitHub and find this workflow."
-          echo "2. Follow the instructions on https://remotedesktop.google.com/headless."
-          echo "3. Set up remote access and get the code."
-          echo "4. Access the machine using Chrome Remote Desktop via your browser or app."
-          echo "Make sure to connect using the headless setup and use the generated code."
-
-      # Step 6: Keep workflow alive for 10 hours
-      - name: Keep Workflow Active for 10 Hours
-        run: sleep 36000
+      - name: Clean up
+        run: sudo apt-get clean
