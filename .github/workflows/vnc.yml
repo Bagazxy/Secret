@@ -1,4 +1,4 @@
-name: Setup Linux with XFCE4 and VNC
+name: Setup Linux with XFCE4 and VNC via Cloudflare Tunnel
 
 on:
   push:
@@ -10,34 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Repository
+      # Step 1: Checkout repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Install XFCE4 and VNC Server
-      - name: Install XFCE4 and VNC
+      # Step 2: Install XFCE4 and VNC server
+      - name: Install XFCE4 and VNC Server
         run: |
           sudo apt update
-          sudo apt install -y xfce4 xfce4-goodies tightvncserver
-          # Setup VNC password (hardcoded for demo purposes; update securely for real use)
+          sudo apt install -y xfce4 xfce4-goodies tightvncserver wget
           mkdir -p ~/.vnc
           echo -e "yourpassword\nyourpassword\nn" | vncpasswd
-          # Start VNC server for setup
-          vncserver -geometry 1920x1080 :1
-
-      # Step 3: Configure XFCE4 for VNC
-      - name: Configure VNC for XFCE4
-        run: |
           echo 'startxfce4' > ~/.vnc/xstartup
           chmod +x ~/.vnc/xstartup
-
-      # Step 4: Restart VNC Server with TCP Listening
-      - name: Restart VNC Server
-        run: |
-          vncserver -kill :1
           vncserver -geometry 1920x1080 :1
 
-      # Step 5: Display Connection Info
-      - name: Display VNC Connection Info
+      # Step 3: Download and setup Cloudflare Tunnel
+      - name: Setup Cloudflare Tunnel
         run: |
-          echo "VNC Server is running. Connect via <Server_IP>:1"
+          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+          nohup cloudflared tunnel --url tcp://localhost:5901 > cloudflare.log 2>&1 &
+
+      # Step 4: Get Cloudflare Tunnel URL
+      - name: Display Cloudflare URL
+        run: |
+          sleep 5
+          cat cloudflare.log | grep -o "tcp://[^ ]*"
+
+      # Step 5: Keep workflow active for 10 hours
+      - name: Keep Alive for 10 Hours
+        run: sleep 36000
