@@ -1,0 +1,43 @@
+name: Setup Linux with XFCE4 and VNC
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  setup-linux-vnc:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout Repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install XFCE4 and VNC Server
+      - name: Install XFCE4 and VNC
+        run: |
+          sudo apt update
+          sudo apt install -y xfce4 xfce4-goodies tightvncserver
+          # Setup VNC password (hardcoded for demo purposes; update securely for real use)
+          mkdir -p ~/.vnc
+          echo -e "yourpassword\nyourpassword\nn" | vncpasswd
+          # Start VNC server for setup
+          vncserver -geometry 1920x1080 :1
+
+      # Step 3: Configure XFCE4 for VNC
+      - name: Configure VNC for XFCE4
+        run: |
+          echo 'startxfce4' > ~/.vnc/xstartup
+          chmod +x ~/.vnc/xstartup
+
+      # Step 4: Restart VNC Server with TCP Listening
+      - name: Restart VNC Server
+        run: |
+          vncserver -kill :1
+          vncserver -geometry 1920x1080 :1
+
+      # Step 5: Display Connection Info
+      - name: Display VNC Connection Info
+        run: |
+          echo "VNC Server is running. Connect via <Server_IP>:1"
