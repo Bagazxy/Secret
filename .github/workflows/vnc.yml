@@ -14,18 +14,22 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y wget curl gnupg2 lsb-release
+          sudo apt install -y wget curl gnupg2 lsb-release apt-transport-https software-properties-common
           sudo apt install -y xorg openbox xrdp
 
-      # Step 2: Install Chrome Remote Desktop
-      - name: Install Chrome Remote Desktop
+      # Step 2: Install Google Chrome
+      - name: Install Google Chrome
         run: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
-          curl -sSL https://dl.google.com/linux/direct/google-chrome-remote-desktop_current_amd64.deb -o crd_installer.deb
-          sudo apt install -y ./crd_installer.deb
 
-      # Step 3: Setup Chrome Remote Desktop
+      # Step 3: Install Chrome Remote Desktop
+      - name: Install Chrome Remote Desktop
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-remote-desktop_current_amd64.deb
+          sudo apt install -y ./google-chrome-remote-desktop_current_amd64.deb
+
+      # Step 4: Setup Chrome Remote Desktop
       - name: Setup Chrome Remote Desktop
         run: |
           sudo systemctl start xrdp
@@ -34,7 +38,7 @@ jobs:
           sudo mkdir /etc/opt/chrome-remote-desktop-session
           echo "exec /usr/bin/openbox-session" | sudo tee /etc/opt/chrome-remote-desktop-session/startup
 
-      # Step 4: Display instructions to configure CRD
+      # Step 5: Display Setup Instructions
       - name: Display Setup Instructions
         run: |
           echo "To complete setup, follow these steps:"
@@ -44,6 +48,6 @@ jobs:
           echo "4. Access the machine using Chrome Remote Desktop via your browser or app."
           echo "Make sure to connect using the headless setup and use the generated code."
 
-      # Step 5: Keep workflow alive for 10 hours
+      # Step 6: Keep workflow alive for 10 hours
       - name: Keep Workflow Active for 10 Hours
         run: sleep 36000
