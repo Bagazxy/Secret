@@ -1,4 +1,4 @@
-name: Setup Linux with XFCE4 and VNC via Cloudflare Tunnel
+name: Setup Linux with XFCE4 and VNC via Pinggy
 
 on:
   push:
@@ -25,19 +25,18 @@ jobs:
           chmod +x ~/.vnc/xstartup
           vncserver -geometry 1920x1080 :1
 
-      # Step 3: Download and setup Cloudflare Tunnel
-      - name: Setup Cloudflare Tunnel
+      # Step 3: Download and setup Pinggy
+      - name: Setup Pinggy Tunnel
         run: |
-          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared-linux-amd64.deb
-          nohup cloudflared tunnel --url tcp://localhost:5901 > cloudflare.log 2>&1 &
+          curl -sL https://get.pinggy.io | bash
+          nohup pinggy tcp 5901 > pinggy.log 2>&1 &
 
-      # Step 4: Get Cloudflare Tunnel URL
-      - name: Display Cloudflare URL
+      # Step 4: Display Pinggy URL
+      - name: Get Pinggy TCP URL
         run: |
           sleep 5
-          cat cloudflare.log | grep -o "tcp://[^ ]*"
+          cat pinggy.log | grep -o "tcp://[^ ]*"
 
-      # Step 5: Keep workflow active for 10 hours
+      # Step 5: Keep workflow alive for 10 hours
       - name: Keep Alive for 10 Hours
         run: sleep 36000
