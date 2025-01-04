@@ -1,0 +1,46 @@
+name: Setup RDP on Windows with Localtunnel
+
+on: 
+  workflow_dispatch:
+    inputs:
+      subdomain:
+        description: 'Subdomain for localtunnel (e.g., my-unique-subdomain)'
+        required: true
+        default: 'my-unique-subdomain'
+
+jobs:
+  setup-rdp:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Chocolatey
+      run: |
+        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+    - name: Install Localtunnel and RDP Wrapper
+      run: |
+        choco install nodejs -y
+        npm install -g localtunnel
+        choco install rdpwrap -y
+        choco install openssh -y
+
+    - name: Configure RDP Wrapper
+      run: |
+        # Ensure RDP Wrapper is properly configured
+        & 'C:\Program Files\RDP Wrapper\RDPWInst.exe' -r
+
+    - name: Start Localtunnel
+      run: |
+        # Start localtunnel to expose RDP port (3389)
+        lt --port 3389 --subdomain ${{ github.event.inputs.subdomain }} &
+
+    - name: Delay for 10 hours
+      run: |
+        timeout /t 36000
+
+    - name: Display RDP Connection Instructions
+      run: |
+        echo "RDP setup complete. To connect, use the RDP client on your phone and connect to the hostname: ${{ github.event.inputs.subdomain }}.loca.lt
