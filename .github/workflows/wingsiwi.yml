@@ -1,0 +1,45 @@
+name: Setup Chrome Remote Desktop
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  setup-crd:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Chrome Remote Desktop
+      run: |
+        # Download Chrome Remote Desktop Host Installer
+        Invoke-WebRequest -Uri "https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb" -OutFile "chrome-remote-desktop.msi"
+
+        # Install Chrome Remote Desktop
+        Start-Process -FilePath "msiexec.exe" -ArgumentList "/i chrome-remote-desktop.msi /quiet /norestart" -Wait
+        Remove-Item -Path "chrome-remote-desktop.msi"
+
+    - name: Configure Chrome Remote Desktop
+      run: |
+        # Authenticate and configure CRD using a unique PIN
+        $pin = "123456"
+        $hostname = $(hostname)
+        & "C:\Program Files (x86)\Google\Chrome Remote Desktop\start-host" `
+          --code="4/0AanRRru81f9l4fh7SBRJM95pglRhFVKrkgm_EoE1Dk8ypMoO7Cs_4iw1Gand-DeYiTF4CA" `
+          --redirect-url="https://remotedesktop.google.com/_/oauthredirect" `
+          --name=$hostname --pin=$pin
+
+    - name: Start Chrome Remote Desktop Service
+      run: |
+        # Ensure the CRD service is running
+        Start-Service -Name "chromeremotedesktop"
+
+    - name: Delay for 10 hours
+      run: |
+        # Delay execution for 10 hours (36000 seconds)
+        timeout /t 36000
+
+    - name: Display CRD Setup Instructions
+      run: |
+        echo "Chrome Remote Desktop setup complete. To finish setup, visit https://remotedesktop.google.com/headless and follow the instructions to authorize your account."
