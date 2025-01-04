@@ -26,14 +26,6 @@ jobs:
       run: |
         choco install openssh -y
 
-    - name: Configure OpenSSH
-      run: |
-        Start-Service sshd
-        Set-Service -Name sshd -StartupType 'Automatic'
-        if (!(Get-NetFirewallRule -Name sshd)) {
-          New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
-        }
-
     - name: Start Serveo Tunnel
       run: |
         Start-Process -FilePath "C:\Program Files\OpenSSH\ssh.exe" -ArgumentList "-R ${{ github.event.inputs.subdomain }}.serveo.net:3389:localhost:3389 serveo.net" -NoNewWindow -Wait
