@@ -1,39 +1,37 @@
-name: Setup RDP on Windows with Serveo
+name: Setup Windows RDP with Pinggy
 
-on: 
+on:
   workflow_dispatch:
-    inputs:
-      subdomain:
-        description: 'Subdomain for serveo (e.g., my-unique-subdomain)'
-        required: true
-        default: 'my-unique-subdomain'
 
 jobs:
   setup-rdp:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Enable RDP
+        run: |
+          Enable-RemoteDesktop
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+          netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
 
-    - name: Install Chocolatey
-      run: |
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      - name: Set RDP User Password
+        run: |
+          net user Administrator YourStrongPassword
+        shell: powershell
 
-    - name: Install OpenSSH
-      run: |
-        choco install openssh -y
+      - name: Download Pinggy
+        run: |
+          Invoke-WebRequest -Uri https://github.com/pinggy-io/pinggy/releases/latest/download/pinggy-windows-amd64.exe -OutFile pinggy.exe
+          Move-Item pinggy.exe C:\Windows\System32
+        shell: powershell
 
-    - name: Start Serveo Tunnel
-      run: |
-        Start-Process -FilePath "C:\Program Files\OpenSSH-Win64\ssh.exe" -ArgumentList "-R ${{ github.event.inputs.subdomain }}.serveo.net:3389:localhost:3389 serveo.net" -NoNewWindow -Wait
+      - name: Start Pinggy Tunnel
+        run: |
+          Start-Process -FilePath "pinggy.exe" -ArgumentList "tcp --port 3389" -NoNewWindow -PassThru
+        shell: powershell
 
-    - name: Delay for 10 hours
-      run: |
-        timeout /t 36000
-
-    - name: Display RDP Connection Instructions
-      run: |
-        echo "RDP setup complete. To connect, use the RDP client on your phone and connect to the hostname: ${{ github.event.inputs.subdomain }}.serveo.net"
+      - name: Get Pinggy Tunnel URL
+        run: |
+          Start-Sleep -Seconds 5
+          (Invoke-WebRequest -Uri "http://127.0.0.1:4040/api/tunnels" | ConvertFrom-Json).tunnels | Where-Object {$_.proto -eq "tcp"} | ForEach-Object {Write-Output "Pinggy RDP URL: $($_.public_url)"}
+        shell: powershell
