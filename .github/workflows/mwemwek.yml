@@ -1,10 +1,10 @@
-name: Setup RDP on Windows with Localtunnel
+name: Setup RDP on Windows with Serveo
 
 on: 
   workflow_dispatch:
     inputs:
       subdomain:
-        description: 'Subdomain for localtunnel (e.g., my-unique-subdomain)'
+        description: 'Subdomain for serveo (e.g., my-unique-subdomain)'
         required: true
         default: 'my-unique-subdomain'
 
@@ -22,30 +22,21 @@ jobs:
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
         iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-    - name: Install Localtunnel and RDP Wrapper
+    - name: Install OpenSSH
       run: |
-        choco install nodejs -y
-        npm install -g localtunnel
-        choco install rdpwrap -y
         choco install openssh -y
 
-    - name: Verify RDP Wrapper Installation
+    - name: Configure OpenSSH
       run: |
-        if (Test-Path "C:\Program Files\RDP Wrapper\RDPWInst.exe") {
-          Write-Output "RDP Wrapper is installed correctly."
-        } else {
-          Write-Error "RDP Wrapper is not installed correctly."
+        Start-Service sshd
+        Set-Service -Name sshd -StartupType 'Automatic'
+        if (!(Get-NetFirewallRule -Name sshd)) {
+          New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
         }
 
-    - name: Configure RDP Wrapper
+    - name: Start Serveo Tunnel
       run: |
-        # Ensure RDP Wrapper is properly configured
-        & "C:\Program Files\RDP Wrapper\RDPWInst.exe" -r
-
-    - name: Start Localtunnel
-      run: |
-        # Start localtunnel to expose RDP port (3389)
-        lt --port 3389 --subdomain ${{ github.event.inputs.subdomain }} &
+        Start-Process -FilePath "C:\Program Files\OpenSSH\ssh.exe" -ArgumentList "-R ${{ github.event.inputs.subdomain }}.serveo.net:3389:localhost:3389 serveo.net" -NoNewWindow -Wait
 
     - name: Delay for 10 hours
       run: |
@@ -53,4 +44,4 @@ jobs:
 
     - name: Display RDP Connection Instructions
       run: |
-        echo "RDP setup complete. To connect, use the RDP client on your phone and connect to the hostname: ${{ github.event.inputs.subdomain }}.loca.lt"
+        echo "RDP setup complete. To connect, use the RDP client on your phone and connect to the hostname: ${{ github.event.inputs.subdomain }}.serveo.net"
