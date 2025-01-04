@@ -29,10 +29,6 @@ jobs:
            --name=$Env:COMPUTERNAME `
            --pin=$PIN
 
-    - name: Start Chrome Remote Desktop Service
-      run: |
-        # Start CRD service to ensure it's active
-        Start-Service -Name "chromeremotedesktop"
 
     - name: Delay for 10 hours
       run: |
