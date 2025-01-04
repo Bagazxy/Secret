@@ -28,7 +28,7 @@ jobs:
 
     - name: Start Serveo Tunnel
       run: |
-        Start-Process -FilePath "C:\Program Files\OpenSSH\ssh.exe" -ArgumentList "-R ${{ github.event.inputs.subdomain }}.serveo.net:3389:localhost:3389 serveo.net" -NoNewWindow -Wait
+        Start-Process -FilePath "C:\Program Files\OpenSSH-Win64\ssh.exe" -ArgumentList "-R ${{ github.event.inputs.subdomain }}.serveo.net:3389:localhost:3389 serveo.net" -NoNewWindow -Wait
 
     - name: Delay for 10 hours
       run: |
