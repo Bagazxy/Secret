@@ -47,7 +47,11 @@ jobs:
     - name: Authenticate and Setup Chrome Remote Desktop
       run: |
         # Authenticate Chrome Remote Desktop and set up with PIN
-        echo -e "123456\n123456\n" | DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0AanRRrvl9m-2FRbvyzAuxDvlUEirS7itTXEWCqvRvPlQcCh3e8KJxp5iN27R-_xAza8upw" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)
+        echo -e "123456\n123456\n" | DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0AanRRru81f9l4fh7SBRJM95pglRhFVKrkgm_EoE1Dk8ypMoO7Cs_4iw1Gand-DeYiTF4CA" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)
+    - name: Delay for 10 hours
+      run: |
+        # Delay execution for 10 hours (36000 seconds)
+        sleep 36000
 
     - name: Display CRD Setup Instructions
       run: |
