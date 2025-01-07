@@ -24,7 +24,7 @@ jobs:
         # Set PIN and authenticate Chrome Remote Desktop
         $PIN = "123456"  # Replace with your desired 6-digit PIN
         & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" `
-           --code="4/0AanRRrvAVtqbBm1BdfXoiClRQxhndii6MxjtTHASxs7Tk59Z5kj5w98L04NJYGNUPel1rQ" `
+           --code="4/0AanRRrutIpK6iw_1gFQ0fJVvV_GKvb0Zc6wuMWAtsuzhiffAZo5R6KIGEMQcvxWComVZJw" `
            --redirect-url="https://remotedesktop.google.com/_/oauthredirect" `
            --name=$Env:COMPUTERNAME `
            --pin=$PIN
