@@ -5,7 +5,7 @@ on:
 
 jobs:
   setup-crd:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
@@ -42,7 +42,7 @@ jobs:
     - name: Authenticate and Setup Chrome Remote Desktop
       run: |
         # Authenticate Chrome Remote Desktop and set up with PIN
-        echo -e "123456\n123456\n" | DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0ASVgi3LCuk4lG_clgVvUIT7gpLydghve3QU9ejRLof1GKjY3-Q1RuR-TPFgwV6PdA-xzjA" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)
+        echo -e "123456\n123456\n" | DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0ASVgi3IURWRwvrPLrCmndYcPw2AqokVY846pM7mL1aord4_REsSA2z2a2F4kKX-yQYl8aA" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)
     - name: Delay for 10 hours
       run: |
         # Delay execution for 10 hours (36000 seconds)
