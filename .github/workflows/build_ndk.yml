@@ -1,0 +1,77 @@
+name: Build NDK for aarch64-linux-gnu
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y clang bison llvm llvm-dev python3 lld ninja-build cmake crossbuild-essential-arm64 git
+
+      - name: Set Environment Variables
+        run: |
+          echo "LLVM_TOOLCHAIN=${GITHUB_WORKSPACE}/llvm-toolchain" >> $GITHUB_ENV
+          echo "AARCH64_NDK=${GITHUB_WORKSPACE}/aarch64-ndk" >> $GITHUB_ENV
+          echo "NDK_VERSION=r14b" >> $GITHUB_ENV
+          echo "NDK=${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}" >> $GITHUB_ENV
+
+      - name: Create Directories
+        run: |
+          mkdir -p $LLVM_TOOLCHAIN
+          mkdir -p $AARCH64_NDK
+          mkdir -p $NDK
+
+      - name: Download NDK Source Code
+        run: |
+          cd $LLVM_TOOLCHAIN
+          repo init -u https://android.googlesource.com/platform/manifest -b llvm-toolchain
+          repo sync -c
+
+      - name: Clone Custom Build Script Repository
+        run: |
+          cd $AARCH64_NDK
+          git clone https://github.com/SnowNF/ndk-aarch64-linux.git
+
+      - name: Apply Custom Modifications
+        run: |
+          cd $LLVM_TOOLCHAIN/toolchain/llvm_android
+          mv patches ../patches
+          rm -rf *
+          cp -rf $AARCH64_NDK/ndk-aarch64-linux/* .
+          mv ../patches patches
+
+      - name: Build NDK for aarch64-linux-gnu
+        run: |
+          cd $LLVM_TOOLCHAIN
+          python3 toolchain/llvm_android/build.py --no-build windows --skip-tests --single-stage --no-musl
+
+      - name: Copy Built NDK Files
+        run: |
+          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/bin/clang* ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/
+          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/lib/llvm-* ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/
+          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/lib/lld* ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/
+          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/lib/clang ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/lib/
+          cp -fr /usr/bin/make ${NDK}/prebuilt/linux-x86_64/bin/
+          cp -fr /usr/bin/yasm ${NDK}/prebuilt/linux-x86_64/bin/
+          cp -fr /usr/bin/ytasm ${NDK}/prebuilt/linux-x86_64/bin/
+
+      - name: Upload NDK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-ndk-${{ env.NDK_VERSION }}-aarch64
+          path: ${{ env.NDK }}
+          retention-days: 30
