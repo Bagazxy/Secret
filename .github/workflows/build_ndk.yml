@@ -55,8 +55,10 @@ jobs:
       - name: Download NDK Source Code
         run: |
           cd "$LLVM_TOOLCHAIN"
-          repo init -u https://android.googlesource.com/platform/manifest -b llvm-toolchain
-          repo sync -c
+          # Initialize repo with a shallow clone (only the latest commit)
+          repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b llvm-toolchain
+          # Sync only the current branch, avoid tags and use optimized fetch if available
+          repo sync -c --no-tags --optimized-fetch
 
       - name: Clone Custom Build Script Repository
         run: |
