@@ -4,7 +4,7 @@ jobs:
   # Job 1: Sync the repository with a shallow clone
   sync-repo:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204
     steps:
       - checkout
       - run:
@@ -28,7 +28,7 @@ jobs:
   # Job 2: Build the toolchain
   build-toolchain:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204
     steps:
       - attach_workspace:
           at: .
@@ -50,7 +50,7 @@ jobs:
   # Job 3: Apply custom modifications for the aarch64 NDK build
   build-ndk:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204
     steps:
       - attach_workspace:
           at: .
@@ -74,7 +74,7 @@ jobs:
   # Job 4: Package the final NDK and store as an artifact
   package-and-upload:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204
     steps:
       - attach_workspace:
           at: .
