@@ -20,7 +20,24 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y clang bison llvm llvm-dev python3 lld ninja-build cmake crossbuild-essential-arm64 git
+          # Install essential packages including repo prerequisites
+          sudo apt install -y clang bison llvm llvm-dev python3 lld ninja-build cmake crossbuild-essential-arm64 git curl make yasm
+
+      - name: Ensure ytasm exists
+        run: |
+          # Some environments might not have ytasm; if missing, symlink yasm to ytasm.
+          if [ ! -f /usr/bin/ytasm ]; then
+            sudo ln -s "$(which yasm)" /usr/bin/ytasm
+          fi
+
+      - name: Install Repo Tool
+        run: |
+          # Install the Android 'repo' tool if it is not already available
+          if ! command -v repo >/dev/null 2>&1; then
+            curl https://storage.googleapis.com/git-repo-downloads/repo > repo
+            chmod a+x repo
+            sudo mv repo /usr/local/bin/
+          fi
 
       - name: Set Environment Variables
         run: |
@@ -31,43 +48,50 @@ jobs:
 
       - name: Create Directories
         run: |
-          mkdir -p $LLVM_TOOLCHAIN
-          mkdir -p $AARCH64_NDK
-          mkdir -p $NDK
+          mkdir -p "$LLVM_TOOLCHAIN"
+          mkdir -p "$AARCH64_NDK"
+          mkdir -p "$NDK"
 
       - name: Download NDK Source Code
         run: |
-          cd $LLVM_TOOLCHAIN
+          cd "$LLVM_TOOLCHAIN"
           repo init -u https://android.googlesource.com/platform/manifest -b llvm-toolchain
           repo sync -c
 
       - name: Clone Custom Build Script Repository
         run: |
-          cd $AARCH64_NDK
+          cd "$AARCH64_NDK"
           git clone https://github.com/SnowNF/ndk-aarch64-linux.git
 
       - name: Apply Custom Modifications
         run: |
-          cd $LLVM_TOOLCHAIN/toolchain/llvm_android
+          cd "$LLVM_TOOLCHAIN/toolchain/llvm_android"
+          # Backup existing patches, then replace source code with custom repository files
           mv patches ../patches
           rm -rf *
-          cp -rf $AARCH64_NDK/ndk-aarch64-linux/* .
+          cp -rf "$AARCH64_NDK/ndk-aarch64-linux/"* .
           mv ../patches patches
 
       - name: Build NDK for aarch64-linux-gnu
         run: |
-          cd $LLVM_TOOLCHAIN
+          cd "$LLVM_TOOLCHAIN"
           python3 toolchain/llvm_android/build.py --no-build windows --skip-tests --single-stage --no-musl
+
+      - name: Prepare NDK Directories for Artifacts
+        run: |
+          mkdir -p "${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          mkdir -p "${NDK}/toolchains/llvm/prebuilt/linux-x86_64/lib"
+          mkdir -p "${NDK}/prebuilt/linux-x86_64/bin"
 
       - name: Copy Built NDK Files
         run: |
-          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/bin/clang* ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/
-          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/lib/llvm-* ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/
-          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/lib/lld* ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/
-          cp -fr ${LLVM_TOOLCHAIN}/out/stage2/lib/clang ${NDK}/toolchains/llvm/prebuilt/linux-x86_64/lib/
-          cp -fr /usr/bin/make ${NDK}/prebuilt/linux-x86_64/bin/
-          cp -fr /usr/bin/yasm ${NDK}/prebuilt/linux-x86_64/bin/
-          cp -fr /usr/bin/ytasm ${NDK}/prebuilt/linux-x86_64/bin/
+          cp -fr "${LLVM_TOOLCHAIN}/out/stage2/bin/clang"* "${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/"
+          cp -fr "${LLVM_TOOLCHAIN}/out/stage2/lib/llvm-"* "${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/"
+          cp -fr "${LLVM_TOOLCHAIN}/out/stage2/lib/lld"* "${NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin/"
+          cp -fr "${LLVM_TOOLCHAIN}/out/stage2/lib/clang" "${NDK}/toolchains/llvm/prebuilt/linux-x86_64/lib/"
+          cp -fr /usr/bin/make "${NDK}/prebuilt/linux-x86_64/bin/"
+          cp -fr /usr/bin/yasm "${NDK}/prebuilt/linux-x86_64/bin/"
+          cp -fr /usr/bin/ytasm "${NDK}/prebuilt/linux-x86_64/bin/"
 
       - name: Upload NDK as Artifact
         uses: actions/upload-artifact@v4
